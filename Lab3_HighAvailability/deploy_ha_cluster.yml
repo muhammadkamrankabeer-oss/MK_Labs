@@ -1,0 +1,55 @@
+---
+- name: Deploy High-Availability Web Cluster
+  hosts: localhost
+  connection: local
+  become: yes
+
+  tasks:
+    - name: Ensure Project Directory exists
+      file:
+        path: "{{ playbook_dir }}/html"
+        state: directory
+
+    - name: Create Web Page for Worker A
+      copy:
+        dest: "{{ playbook_dir }}/html/index_a.html"
+        content: "<h1>Welcome to Server A</h1><p>Served from Container 1</p>"
+
+    - name: Create Web Page for Worker B
+      copy:
+        dest: "{{ playbook_dir }}/html/index_b.html"
+        content: "<h1>Welcome to Server B</h1><p>Served from Container 2</p>"
+
+    - name: Run Worker A (Port 8081)
+      community.docker.docker_container:
+        name: web-worker-a
+        image: nginx:latest
+        state: started
+        restart_policy: always
+        ports:
+          - "8081:80"
+        volumes:
+          - "{{ playbook_dir }}/html/index_a.html:/usr/share/nginx/html/index.html"
+
+    - name: Run Worker B (Port 8082)
+      community.docker.docker_container:
+        name: web-worker-b
+        image: nginx:latest
+        state: started
+        restart_policy: always
+        ports:
+          - "8082:80"
+        volumes:
+          - "{{ playbook_dir }}/html/index_b.html:/usr/share/nginx/html/index.html"
+
+    - name: Run Nginx Load Balancer (Port 8080)
+      community.docker.docker_container:
+        name: load-balancer
+        image: nginx:latest
+        state: started
+        recreate: yes
+        restart_policy: always
+        ports:
+          - "8080:80"
+        volumes:
+          - "{{ playbook_dir }}/nginx.conf:/etc/nginx/nginx.conf:ro"

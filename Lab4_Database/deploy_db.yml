@@ -1,0 +1,28 @@
+---
+- name: Deploy Hardened MariaDB Lab
+  hosts: localhost
+  connection: local
+  become: yes
+  vars_files:
+    - db_vars.yml
+
+  tasks:
+    - name: Create persistent volume for Data
+      community.docker.docker_volume:
+        name: mariadb_data
+
+    - name: Start Hardened MariaDB Container
+      community.docker.docker_container:
+        name: lab4-database
+        image: mariadb:latest
+        state: started
+        restart_policy: always
+        env:
+          MYSQL_ROOT_PASSWORD: "{{ db_root_password }}"
+          MYSQL_DATABASE: "{{ db_name }}"
+          MYSQL_USER: "{{ db_user }}"
+          MYSQL_PASSWORD: "{{ db_password }}"
+        volumes:
+          - "mariadb_data:/var/lib/mysql"
+        ports:
+          - "127.0.0.1:3306:3306" # Hardening: Only allows local connections

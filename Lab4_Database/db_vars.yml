@@ -1,0 +1,4 @@
+db_root_password: "SuperSecretPassword123"
+db_name: "student_records"
+db_user: "kamran_admin"
+db_password: "SafeUserPass456"
